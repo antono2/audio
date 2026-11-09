@@ -48,8 +48,8 @@ From any checkout location, `v run scripts/test.vsh` builds the native archive,
 copies only the package's required files into a temporary `antono2/audio`
 namespace, and sets `VMODULES` to that isolated directory. It cannot accidentally
 use another installed copy of this package. It runs all playback tests with the
-ordinary and strict new compiler, builds both examples in both modes, and checks
-the silent example. The temporary directory is removed afterwards.
+ordinary and strict new compiler, builds all three examples in both modes, and
+checks the silent example. The temporary directory is removed afterwards.
 
 Set `VJOBS=2` to bound parallel test workers. `V_MACOS_V3_NO_FALLBACK=1` prevents
 fallback during new-compiler validation. `ANTONO2_AUDIO_V_CC` optionally selects
@@ -64,9 +64,13 @@ Install the package in the namespace shown in the README, then run:
 ```sh
 v -nocache run examples/playback /path/to/test.wav
 v -nocache run examples/playback /path/to/test.ogg --stream
+v -nocache run examples/spatial playback/testdata/tone440.ogg
 ```
 
-The example stops after at most five seconds and uses 15% master gain. Check
-both decoded and streamed playback, device startup, clean exit and the absence
+The playback example stops after at most five seconds and uses 15% master gain.
+The six-second spatial example uses the same gain and a mono file. It plays
+three pulses on the left, three in the centre and three on the right; stereo
+headphones make the placement easier to hear. It does not record audio.
+Check both decoded and streamed playback, device startup, clean exit and the absence
 of glitches. Report OS, V revision, C compiler, audio backend and reproduction
 steps with any issue. Do not attach recordings containing private conversation.

@@ -39,7 +39,7 @@ fn run_validation() ! {
 	extension := $if windows { '.exe' } $else { '' }
 	for flags in ['', '-new-compiler'] {
 		run('${compiler} ${flags} test ${os.quoted_path(os.join_path(module_root, 'playback'))}')!
-		for example in ['silent', 'playback'] {
+		for example in ['silent', 'playback', 'spatial'] {
 			output := os.join_path(temporary, example + extension)
 			run('${compiler} ${flags} -o ${os.quoted_path(output)} ${os.quoted_path(os.join_path(module_root, 'examples', example))}')!
 			if example == 'silent' {

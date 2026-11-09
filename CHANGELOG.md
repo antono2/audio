@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- A six-second spatial playback example: left, centre and right, using the
+  bundled mono tone. CI compiles it in both V compiler modes.
+
 ## 0.1.0 — 2026-11-09
 
 - Decoded and streamed WAV/Ogg Vorbis voices backed by miniaudio 0.11.25.

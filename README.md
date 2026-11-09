@@ -46,6 +46,8 @@ cd "$HOME/.vmodules/antono2/audio"
 v run scripts/build_native_audio.vsh
 v -nocache run examples/silent playback/testdata/tone440.ogg
 v -nocache run examples/playback playback/testdata/tone440.ogg
+# Hear three pulses on the left, in the centre, then on the right.
+v -nocache run examples/spatial playback/testdata/tone440.ogg
 # Stream a longer file; the example stops after at most five seconds.
 v -nocache run examples/playback /path/to/music.ogg --stream
 ```
@@ -98,8 +100,8 @@ v run scripts/test.vsh
 ```
 
 This builds the native archive, stages a clean isolated module layout, runs all
-tests in both compiler modes, and builds both examples. It runs only the silent
-example. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
+tests in both compiler modes, and builds all three examples. It runs only the
+silent example. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

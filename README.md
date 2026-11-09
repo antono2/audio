@@ -20,7 +20,7 @@ macOS and Windows device playback still need platform testing.
 - Exercise voice ownership and control logic without opening a sound device.
 
 It does not provide recording, MP3/FLAC decoding, a full miniaudio binding,
-individual-voice pause/resume, a public seek API or a game engine. The silent
+individual-voice pause/resume or a public seek API. The silent
 backend does not advance the playback clock or render samples.
 
 ## Requirements
@@ -37,11 +37,11 @@ needed for this build.
 
 ## Install and run
 
-Install into V's namespace layout and build the native
+Install from [VPM](https://vpm.vlang.io/packages/antono2.audio) and build the native
 archive once (replace the directory if you use a custom `VMODULES`):
 
 ```sh
-git clone https://github.com/antono2/audio.git "$HOME/.vmodules/antono2/audio"
+v install antono2.audio
 cd "$HOME/.vmodules/antono2/audio"
 v run scripts/build_native_audio.vsh
 v -nocache run examples/silent playback/testdata/tone440.ogg

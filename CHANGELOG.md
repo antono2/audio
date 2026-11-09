@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — unreleased preparation
+## 0.1.0 — 2026-11-09
 
 - Decoded and streamed WAV/Ogg Vorbis voices backed by miniaudio 0.11.25.
 - Master/per-voice gain, looping, restart, stop, engine pause and 3D positioning.

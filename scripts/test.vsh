@@ -1,4 +1,6 @@
 #!/usr/bin/env -S v run
+// Validates the package in an isolated module layout with both supported compiler modes.
+// Builds all examples but runs only the silent one; no audio device is opened.
 
 import os
 import time

@@ -1,3 +1,5 @@
+// Plays a decoded or streamed WAV/Ogg file on the default output at 15% gain.
+// Stops after at most five seconds and releases the device on exit.
 module main
 
 import antono2.audio.playback

@@ -11,6 +11,8 @@ mut:
 	cursor int
 }
 
+// spatial_voice_pool copies 1..64 unique, nonempty IDs; it does not load their sounds.
+// Each ID must refer to a loaded voice in the Audio supplied to play.
 pub fn spatial_voice_pool(voices []string) !SpatialVoicePool {
 	if voices.len < 1 || voices.len > 64 {
 		return error('spatial voice pool requires 1..64 voices')
@@ -25,6 +27,7 @@ pub fn spatial_voice_pool(voices []string) !SpatialVoicePool {
 	return SpatialVoicePool{ voices: voices.clone() }
 }
 
+// voice_ids returns a copy; changing it cannot change pool membership.
 pub fn (pool SpatialVoicePool) voice_ids() []string {
 	return pool.voices.clone()
 }

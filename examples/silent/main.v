@@ -1,3 +1,4 @@
+// Demonstrates bounded voice reuse and duplicate-cue suppression without an audio device.
 module main
 
 import antono2.audio.playback

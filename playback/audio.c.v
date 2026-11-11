@@ -1,3 +1,5 @@
+// Owns miniaudio engines and named voices behind the V playback API.
+// Serialize wrapper calls and release native resources with shutdown(); build the native archive first.
 module playback
 
 import math
@@ -113,12 +115,16 @@ const ma_sound_flag_stream = u32(0x00000001)
 const ma_sound_flag_decode = u32(0x00000002)
 const ma_sound_flag_no_spatialization = u32(0x00004000)
 
+// AudioConfig selects the default device or a silent engine that does not advance playback.
+// Master gain must be finite and in [0, 1].
 pub struct AudioConfig {
 pub:
 	null_backend bool
 	volume       f32 = 1
 }
 
+// SoundConfig selects decoded/streamed loading, looping and spatialization.
+// Gains are finite [0, 1]; distances use the same units as positions, with 0 < min <= max.
 pub struct SoundConfig {
 pub:
 	stream       bool
@@ -129,6 +135,8 @@ pub:
 	max_distance f32 = 100
 }
 
+// SoundInfo reports sample rate in Hz and length in PCM frames, not individual channel samples.
+// frames is usable only when length_known is true.
 pub struct SoundInfo {
 pub:
 	channels     u32
@@ -137,6 +145,8 @@ pub:
 	length_known bool
 }
 
+// Audio owns native engine and sound allocations; do not copy it into independent owners.
+// Serialize control calls and call shutdown when finished.
 @[heap]
 pub struct Audio {
 mut:
@@ -146,6 +156,8 @@ mut:
 	sounds             map[string]&C.ma_sound
 }
 
+// new_audio creates an engine or returns a validation/native initialization error.
+// The caller owns the returned instance and must call shutdown.
 pub fn new_audio(config AudioConfig) !&Audio {
 	if !finite(config.volume) || config.volume < 0 || config.volume > 1 {
 		return error('audio volume must be in [0, 1]')
@@ -174,10 +186,13 @@ pub fn new_audio(config AudioConfig) !&Audio {
 	return audio
 }
 
+// sound_count counts loaded voices, including stopped ones; shutdown clears them.
 pub fn (audio &Audio) sound_count() int {
 	return audio.sounds.len
 }
 
+// device_name returns a copied device name, or "none" for the silent backend.
+// Returns an error after shutdown or if the native device query fails.
 pub fn (audio &Audio) device_name() !string {
 	if !audio.engine_initialized {
 		return error('audio engine is not initialized')
@@ -196,10 +211,14 @@ pub fn (audio &Audio) device_name() !string {
 	return unsafe { (&char(name.data)).vstring() }.clone()
 }
 
+// version returns the linked miniaudio version, not the V package version.
 pub fn version() string {
 	return unsafe { C.ma_version_string().vstring() }.clone()
 }
 
+// load adds one owned voice without starting playback; IDs must be nonempty and unique.
+// File/decoder and configuration failures return errors without registering the voice.
+// Keep streamed files available for the lifetime of their loaded voices.
 pub fn (mut audio Audio) load(id string, path string, config SoundConfig) ! {
 	if !audio.engine_initialized {
 		return error('audio engine is not initialized')
@@ -234,6 +253,8 @@ pub fn (mut audio Audio) load(id string, path string, config SoundConfig) ! {
 	audio.sounds[id] = handle
 }
 
+// play stops and rewinds a loaded voice before starting it; it does not resume from a pause.
+// Missing IDs or native stop/seek/start failures return errors.
 pub fn (mut audio Audio) play(id string) ! {
 	handle := audio.sound(id)!
 	ensure_success(C.ma_sound_stop(handle), 'stop sound `${id}` before replay')!
@@ -241,14 +262,18 @@ pub fn (mut audio Audio) play(id string) ! {
 	ensure_success(C.ma_sound_start(handle), 'play sound `${id}`')!
 }
 
+// stop halts a loaded voice without unloading it; unknown IDs and native failures return errors.
 pub fn (mut audio Audio) stop(id string) ! {
 	ensure_success(C.ma_sound_stop(audio.sound(id)!), 'stop sound `${id}`')!
 }
 
+// is_playing queries a loaded voice; the silent backend does not advance its playback clock.
 pub fn (audio &Audio) is_playing(id string) !bool {
 	return C.ma_sound_is_playing(audio.sound(id)!) != 0
 }
 
+// info queries a loaded voice; unsupported streamed length is reported as unknown rather than an error.
+// Other native query failures and unknown IDs return errors.
 pub fn (audio &Audio) info(id string) !SoundInfo {
 	handle := audio.sound(id)!
 	mut channels := u32(0)
@@ -269,6 +294,8 @@ pub fn (audio &Audio) info(id string) !SoundInfo {
 	}
 }
 
+// set_sound_position sets finite coordinates in the same units as the listener and distance limits.
+// Positioning affects spatial voices; an unknown ID returns an error.
 pub fn (mut audio Audio) set_sound_position(id string, x f32, y f32, z f32) ! {
 	if !finite(x) || !finite(y) || !finite(z) {
 		return error('sound position must be finite')
@@ -276,6 +303,8 @@ pub fn (mut audio Audio) set_sound_position(id string, x f32, y f32, z f32) ! {
 	C.ma_sound_set_position(audio.sound(id)!, x, y, z)
 }
 
+// set_listener updates listener zero; coordinates and orientation components must be finite.
+// The caller supplies meaningful forward/up vectors; this wrapper does not normalize them.
 pub fn (mut audio Audio) set_listener(position [3]f32, forward [3]f32, up [3]f32) ! {
 	if !audio.engine_initialized {
 		return error('audio engine is not initialized')
@@ -292,6 +321,7 @@ pub fn (mut audio Audio) set_listener(position [3]f32, forward [3]f32, up [3]f32
 	C.ma_engine_listener_set_world_up(audio.engine, 0, up[0], up[1], up[2])
 }
 
+// set_volume sets finite master gain in [0, 1]; the engine must still be initialized.
 pub fn (mut audio Audio) set_volume(volume f32) ! {
 	if !finite(volume) || volume < 0 || volume > 1 {
 		return error('audio volume must be in [0, 1]')
@@ -311,6 +341,8 @@ pub fn (mut audio Audio) set_sound_volume(id string, volume f32) ! {
 	C.ma_sound_set_volume(audio.sound(id)!, volume)
 }
 
+// set_paused stops or starts the whole output device, preserving loaded voices.
+// It is a no-op for an initialized silent engine; native device failures return errors.
 pub fn (mut audio Audio) set_paused(paused bool) ! {
 	if !audio.engine_initialized {
 		return error('audio engine is not initialized')
@@ -322,6 +354,8 @@ pub fn (mut audio Audio) set_paused(paused bool) ! {
 	ensure_success(result, if paused { 'pause audio engine' } else { 'resume audio engine' })!
 }
 
+// shutdown releases all loaded sounds and engine storage; repeated calls are safe.
+// This instance cannot be reinitialized; create a new Audio to resume use.
 pub fn (mut audio Audio) shutdown() {
 	for _, handle in audio.sounds {
 		C.ma_sound_uninit(handle)

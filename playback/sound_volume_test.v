@@ -1,3 +1,4 @@
+// Checks per-voice gain changes and errors without opening an output device or reloading decoders.
 module playback
 
 import math

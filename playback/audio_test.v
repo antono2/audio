@@ -1,3 +1,4 @@
+// Checks silent engine ownership, loading failures and decoded/streamed sound metadata.
 module playback
 
 import os

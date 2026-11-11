@@ -1,3 +1,4 @@
+// Exercises bounded voice selection, replacement and failure handling with a silent engine.
 module playback
 
 import os

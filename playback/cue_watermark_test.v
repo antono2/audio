@@ -1,3 +1,4 @@
+// Checks ordered cue replay suppression, restored sequence state and the u64 boundary.
 module playback
 
 fn test_cue_watermark_bounded_replay_restore_and_exhaustion() ! {

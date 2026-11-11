@@ -1,3 +1,4 @@
+// Checks that nonfinite spatial and gain inputs fail before reaching native audio calls.
 module playback
 
 import math

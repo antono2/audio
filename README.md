@@ -67,6 +67,15 @@ audio.play('effect')!
 // Keep your application's event loop running while the sound plays.
 ```
 
+## Audio playground
+
+The [Audio playground](https://github.com/antono2/v_imgui_examples/tree/master/examples/audio_playground)
+is a runnable desktop example of this library. Move a sound around the listener,
+adjust its volume and see the corresponding V call. The [example collection](https://github.com/antono2/v_imgui_examples/tree/master/examples)
+includes its source and build instructions.
+
+![Audio playground with a listener diagram, playback controls and the corresponding V call](https://raw.githubusercontent.com/antono2/v_imgui_examples/master/examples/audio_playground/screenshot.png)
+
 ## Ownership and scope
 
 Keep one `Audio` instance alive while its sounds are in use. `shutdown()` frees

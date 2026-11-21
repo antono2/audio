@@ -6,7 +6,12 @@ Validation uses V 0.5.2, revision
 `c9b806b294234408af3794f419439599a293a0ea`, with VC
 `21490f7811a2dd366c3daa39bef8e53c1e3e5727` and TinyCC
 `d6e7ac1b1bcc98aed734a6ecbfa8509f24606c74` when using V's default C compiler.
-The CI bootstrap uses the same V and VC revisions with the system C compiler.
+CI checks out those V and VC revisions, then runs `v run scripts/ci.vsh V_SOURCE`
+with the released V tool. To reproduce that step, pass the compiler checkout
+containing the matching `vc/` checkout. The script uses Make and the system C
+compiler on Linux/macOS. On Windows it finds the prefixed MinGW-w64 GCC on PATH
+and uses the archiver beside it. Both paths build the pinned compiler before
+running the full audio checks.
 Newer compilers may work but are not implied by this validation record.
 
 Use `-nocache` when compiling applications importing this package with the pinned

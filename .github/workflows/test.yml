@@ -33,30 +33,9 @@ jobs:
           ref: 21490f7811a2dd366c3daa39bef8e53c1e3e5727
           path: .cache/v/vc
           persist-credentials: false
-      - name: Build pinned compiler and validate (Linux and macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        env:
-          ANTONO2_AUDIO_V_CC: cc
-        run: |
-          make -C .cache/v local=1 CC=cc VFLAGS='-cc cc -gc none'
-          .cache/v/v -cc cc run scripts/test.vsh
-      - name: Build pinned compiler and validate (Windows MinGW)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $cc = (Get-Command x86_64-w64-mingw32-gcc.exe -ErrorAction Stop).Source
-          $ar = Join-Path (Split-Path $cc) 'ar.exe'
-          if (!(Test-Path $ar)) { throw 'Matching MinGW ar.exe not found' }
-          $env:ANTONO2_AUDIO_CC = $cc
-          $env:ANTONO2_AUDIO_AR = $ar
-          $env:ANTONO2_AUDIO_V_CC = $cc
-          $env:VFLAGS = '-gc none -cflags "-Wno-error=incompatible-pointer-types"'
-          Push-Location .cache/v
-          & $cc -DCUSTOM_DEFINE_v1_fallback -std=c99 -municode -w -o v-bootstrap.exe vc/v_win.c -ladvapi32 -lws2_32 -lbcrypt '-Wl,--stack=33554432'
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          ./v-bootstrap.exe -no-parallel -gc none -cc $cc -cflags '-Wno-error=incompatible-pointer-types' -o v.exe cmd/v
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Pop-Location
-          ./.cache/v/v.exe -cc $cc run scripts/test.vsh
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: prantlf/setup-v-action@92f20bea50d2c9931a28c96bb4997a3c7357baf0 # v4
+        with:
+          version: 0.5.2
+          install-dependencies: false
+      - name: Build pinned compiler and validate
+        run: v run scripts/ci.vsh .cache/v

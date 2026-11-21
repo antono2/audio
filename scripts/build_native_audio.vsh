@@ -1,7 +1,9 @@
 #!/usr/bin/env -S v run
+
 // Builds the vendored decoder and generated miniaudio implementation into a local native archive.
 // Rebuild for each target ABI; compiler and archiver overrides are executable paths.
 
+import audiotooling
 import os
 
 const project_root = @VMODROOT
@@ -34,7 +36,7 @@ fn build() ! {
 	os.write_file(miniaudio_source, miniaudio_build_unit())!
 	compile(cc, miniaudio_source, miniaudio_object, [miniaudio_dir, vorbis_dir])!
 	compile(cc, vorbis_source, vorbis_object, [vorbis_dir])!
-	run('${os.quoted_path(ar)} rcs ${os.quoted_path(staged_library)} ${os.quoted_path(miniaudio_object)} ${os.quoted_path(vorbis_object)}')!
+	audiotooling.run(ar, ['rcs', staged_library, miniaudio_object, vorbis_object])!
 	final_library := os.join_path(output_dir, 'libantono2_audio.a')
 	os.mv(staged_library, final_library)!
 	println(final_library)
@@ -45,12 +47,12 @@ fn miniaudio_build_unit() string {
 }
 
 fn compile(cc string, source string, output string, include_dirs []string) ! {
-	mut command := '${os.quoted_path(cc)} -std=c99 -O2'
+	mut args := ['-std=c99', '-O2']
 	for include_dir in include_dirs {
-		command += ' -I ${os.quoted_path(include_dir)}'
+		args << ['-I', include_dir]
 	}
-	command += ' -c ${os.quoted_path(source)} -o ${os.quoted_path(output)}'
-	run(command)!
+	args << ['-c', source, '-o', output]
+	audiotooling.run(cc, args)!
 }
 
 fn tool_from_environment(name string, fallback string) string {
@@ -59,14 +61,4 @@ fn tool_from_environment(name string, fallback string) string {
 		return configured
 	}
 	return fallback
-}
-
-fn run(command string) ! {
-	result := os.execute(command)
-	if result.output != '' {
-		print(result.output)
-	}
-	if result.exit_code != 0 {
-		return error('`${command}` exited with ${result.exit_code}')
-	}
 }

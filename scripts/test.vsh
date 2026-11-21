@@ -1,7 +1,9 @@
 #!/usr/bin/env -S v run
+
 // Validates the package in an isolated module layout with both supported compiler modes.
 // Builds all examples but runs only the silent one; no audio device is opened.
 
+import audiotooling
 import os
 import time
 
@@ -20,12 +22,13 @@ fn run_validation() ! {
 	cc := os.getenv('ANTONO2_AUDIO_V_CC')
 	// The pinned compiler can omit native typedef includes in cached modules.
 	// Compile complete translation units; keep strict new-compiler execution.
-	compiler := os.quoted_path(@VEXE) + ' -nocache' + if cc == '' {
-		''
-	} else {
-		' -cc ' + os.quoted_path(cc)
+	mut flags := ['-nocache']
+	if cc != '' {
+		flags << ['-cc', cc]
 	}
-	run('${compiler} run ${os.quoted_path(os.join_path(package_root, 'scripts/build_native_audio.vsh'))}')!
+	mut build_args := flags.clone()
+	build_args << ['run', os.join_path(package_root, 'scripts', 'build_native_audio.vsh')]
+	audiotooling.run(@VEXE, build_args)!
 	temporary := os.join_path(os.temp_dir(), 'antono2-audio-test-${os.getpid()}-${time.now().unix_milli()}')
 	module_root := os.join_path(temporary, 'antono2', 'audio')
 	os.mkdir_all(module_root)!
@@ -39,23 +42,20 @@ fn run_validation() ! {
 	os.setenv('VMODULES', temporary, true)
 	defer { os.setenv('VMODULES', prior, true) }
 	extension := $if windows { '.exe' } $else { '' }
-	for flags in ['', '-new-compiler'] {
-		run('${compiler} ${flags} test ${os.quoted_path(os.join_path(module_root, 'playback'))}')!
+	for mode in [flags, [...flags, '-new-compiler']] {
+		mut test_args := mode.clone()
+		test_args << ['test', os.join_path(module_root, 'playback')]
+		audiotooling.run(@VEXE, test_args)!
 		for example in ['silent', 'playback', 'spatial'] {
 			output := os.join_path(temporary, example + extension)
-			run('${compiler} ${flags} -o ${os.quoted_path(output)} ${os.quoted_path(os.join_path(module_root, 'examples', example))}')!
+			mut build_example := mode.clone()
+			build_example << ['-o', output, os.join_path(module_root, 'examples', example)]
+			audiotooling.run(@VEXE, build_example)!
 			if example == 'silent' {
-				run('${os.quoted_path(output)} ${os.quoted_path(os.join_path(module_root, 'playback/testdata/tone440.ogg'))}')!
+				audiotooling.run(output, [os.join_path(module_root, 'playback', 'testdata',
+					'tone440.ogg')])!
 			}
 		}
 	}
 	println('Both compiler modes, isolated imports and silent example passed.')
-}
-
-fn run(command string) ! {
-	result := os.execute(command)
-	print(result.output)
-	if result.exit_code != 0 {
-		return error('validation command failed (${result.exit_code}): ${command}')
-	}
 }
